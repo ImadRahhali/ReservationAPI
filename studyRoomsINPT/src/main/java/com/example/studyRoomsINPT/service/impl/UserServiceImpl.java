@@ -1,5 +1,7 @@
 package com.example.studyRoomsINPT.service.impl;
 
+import com.example.studyRoomsINPT.dto.UpdatePasswordRequest;
+import com.example.studyRoomsINPT.dto.UpdateUserRequest;
 import com.example.studyRoomsINPT.exception.UserNotFoundException;
 import com.example.studyRoomsINPT.model.Reservation;
 import com.example.studyRoomsINPT.repository.ReservationRepository;
@@ -7,6 +9,8 @@ import com.example.studyRoomsINPT.service.UserService;
 import com.example.studyRoomsINPT.model.User;
 import com.example.studyRoomsINPT.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -17,45 +21,49 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
 
+    @Autowired
+    PasswordEncoder encoder;
 
     @Autowired
     public UserServiceImpl(UserRepository userRepository) {
         this.userRepository = userRepository;
     }
 
-    @Override
-    public User registerUser(User user) {
-        // Add any validation or additional logic here before saving
-        return userRepository.save(user);
-    }
+
 
     @Override
-    public String updatePassword(String username, String newPassword) {
-        Optional<User> optionalUser = userRepository.findByUsername(username);
-        if (optionalUser.isPresent()) {
-            User user = optionalUser.get();
-            user.setPassword(newPassword);
-            userRepository.save(user);
-            return "Password updated successfully.";
-        } else {
-            return "User not found.";
+    public String updatePassword(UpdatePasswordRequest updatePasswordRequest) {
+        User currentUser = getCurrentLoggedInUser();
+
+        String newPassword = updatePasswordRequest.getNewPassword();
+        userRepository.updateUserPassword(currentUser.getUsername(), encoder.encode(newPassword));
+
+        return "Password updated successfully!";
+    }
+
+    private User getCurrentLoggedInUser() {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        return userRepository.findByUsername(email)
+                .orElseThrow(() -> new UserNotFoundException("USER_NOT_FOUND_MESSAGE"));
+    }
+    @Override
+    public String updateUser(UpdateUserRequest updateUserRequest) {
+        User currentUser = getCurrentLoggedInUser();
+
+        String newUsername = updateUserRequest.getNewUsername();
+        String newEmail = updateUserRequest.getNewEmail();
+        String newPassword = updateUserRequest.getNewPassword();
+
+        // Check if newPassword is not null before encoding
+        if (newPassword != null) {
+            newPassword = encoder.encode(newPassword);
         }
+
+        userRepository.updateUser(currentUser.getUsername(), newUsername, newEmail, newPassword);
+
+        return "User details updated successfully!";
     }
 
-
-    @Override
-    public String updatePersonalData(String username, String newEmail, String newPassword) {
-        Optional<User> optionalUser = userRepository.findByUsername(username);
-        if (optionalUser.isPresent()) {
-            User user = optionalUser.get();
-            user.setEmail(newEmail);
-            user.setPassword(newPassword);
-            userRepository.save(user);
-            return "Personal data updated successfully.";
-        } else {
-            return "User not found.";
-        }
-    }
 
     @Override
     public String deleteUserByUsername(String username) {
@@ -68,11 +76,6 @@ public class UserServiceImpl implements UserService {
         }
     }
 
-    @Override
-    public List<User> searchUsers(String searchTerm) {
-        // Implement search logic based on the searchTerm
-        return userRepository.findAll(); // For demonstration, returning all users
-    }
 
     @Override
     public User findUserByIdOrEmailOrUsername(Long id, String email, String username) {

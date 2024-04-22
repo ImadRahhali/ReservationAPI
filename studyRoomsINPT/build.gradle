@@ -1,14 +1,28 @@
 plugins {
-	id 'java'
 	id 'org.springframework.boot' version '3.2.4'
 	id 'io.spring.dependency-management' version '1.1.4'
+	id 'groovy'
 }
+apply plugin: 'groovy'
 
 group = 'com.example'
 version = '0.0.1-SNAPSHOT'
 
+sourceSets {
+	main {
+		java {
+			srcDirs = [] // No source dirs for the Java compiler
+		}
+		groovy {
+			srcDirs = ["src/main/java", "src/main/groovy"] // Specify the source directory for Groovy code
+		}
+	}
+}
+
 java {
-	sourceCompatibility = '17'
+	toolchain {
+		languageVersion.set(JavaLanguageVersion.of(17)) // Set the Java language version for Java code
+	}
 }
 
 configurations {
@@ -22,6 +36,7 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-security'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	implementation 'org.springframework.boot:spring-boot-starter-validation:3.2.1'
+	implementation 'org.codehaus.groovy:groovy:3.0.9'
 	compileOnly 'org.projectlombok:lombok'
 	runtimeOnly 'com.mysql:mysql-connector-j'
 	implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
@@ -31,11 +46,18 @@ dependencies {
 	testImplementation 'org.mockito:mockito-core:3.12.4'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.springframework.security:spring-security-test'
-
 }
 
 repositories {
 	mavenCentral()
+}
+
+
+
+tasks.withType(JavaCompile) {
+	options.encoding = 'UTF-8'
+	// Remove the following line to fix the circular dependency
+	// dependsOn 'compileGroovy'
 }
 
 

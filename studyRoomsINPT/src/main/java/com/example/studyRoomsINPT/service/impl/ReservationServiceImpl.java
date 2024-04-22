@@ -9,6 +9,7 @@ import com.example.studyRoomsINPT.repository.ReservationRepository;
 import com.example.studyRoomsINPT.repository.RoomRepository;
 import com.example.studyRoomsINPT.repository.UserRepository;
 import com.example.studyRoomsINPT.service.ReservationService;
+import groovyScripts.RoomOccupationVerifier;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -28,6 +29,7 @@ public class ReservationServiceImpl implements ReservationService {
     private UserRepository userRepository;
     private final ReservationRepository reservationRepository;
 
+    RoomOccupationVerifier verifier = new RoomOccupationVerifier(roomRepository);
     @Autowired
     public ReservationServiceImpl(ReservationRepository reservationRepository) {
         this.reservationRepository = reservationRepository;
@@ -40,15 +42,17 @@ public class ReservationServiceImpl implements ReservationService {
                 .collect(Collectors.toList());
     }
 
+
+
     @Override
     public ReservationDto createReservation(Reservation reservation, String username) {
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+            // Check room occupation before creating reservation
+        try {
+            verifier.verifyRoomOccupation(reservation);
+        } catch (IllegalArgumentException e) {
+            throw new RuntimeException("Failed to create reservation: " + e.getMessage());
+        }
 
-        // Set the user for the reservation
-        reservation.setUser(user);
-
-        // Save the reservation
         Reservation createdReservation = reservationRepository.save(reservation);
 
         // Fetch the room along with the reservation
@@ -65,6 +69,7 @@ public class ReservationServiceImpl implements ReservationService {
 
         return dto;
     }
+
 
 
     @Override

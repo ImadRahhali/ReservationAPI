@@ -19,7 +19,12 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
     List<Reservation> findByRoom(Room room);
     List<Reservation> findByReservationDate(LocalDate reservationDate);
 
-
+    @Query("SELECT r FROM Reservation r WHERE r.room = :room " +
+            "AND ((r.startHour BETWEEN :startHour AND :endHour) OR " +
+            "(r.endHour BETWEEN :startHour AND :endHour) OR " +
+            "(:startHour BETWEEN r.startHour AND r.endHour) OR " +
+            "(:endHour BETWEEN r.startHour AND r.endHour))")
+    List<Reservation> findOverlappingReservations(Room room, LocalTime startHour, LocalTime endHour);
 
 
     List<Reservation> findByReservationDateAndRoom(LocalDate reservationDate, Room room);

@@ -53,9 +53,4 @@ public class RoomController {
     }
 
 
-    @GetMapping("/search")
-    public ResponseEntity<List<Room>> searchRooms(@RequestParam String searchTerm) {
-        List<Room> rooms = roomService.searchRooms(searchTerm);
-        return ResponseEntity.ok(rooms);
-    }
 }

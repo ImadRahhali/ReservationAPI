@@ -16,7 +16,7 @@ public class Room {
 
     @Column(nullable = false, unique = true)
     private String roomNumber;
-
+    private Integer maximumCapacity;
     private boolean isOccupied;
 
     @JsonIgnoreProperties("room")
